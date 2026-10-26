@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createSession, upsertXUser } from "@/lib/auth";
+import { createSession, getUser, linkXAccount, upsertXUser } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { getNiche } from "@/lib/posts";
 import { consumeState, exchangeCode, fetchMe, saveTokens } from "@/lib/x";
 
-const fail = (reason: string) => NextResponse.redirect(`${env.appUrl}/?error=${encodeURIComponent(reason)}`);
+const fail = (reason: string) => NextResponse.redirect(`${env.appUrl}/login?error=${encodeURIComponent(reason)}`);
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -16,6 +16,14 @@ export async function GET(request: NextRequest) {
   try {
     const tokens = await exchangeCode(code, verifier);
     const me = await fetchMe(tokens.access_token);
+    const current = await getUser();
+    if (current) {
+      // Signed in with email: connect this X account to it.
+      const linked = linkXAccount(current.id, me);
+      if (!linked.ok) return NextResponse.redirect(`${env.appUrl}/app/settings?error=${encodeURIComponent(linked.error)}`);
+      saveTokens(current.id, tokens);
+      return NextResponse.redirect(`${env.appUrl}/app/settings?connected=1`);
+    }
     const userId = upsertXUser(me);
     saveTokens(userId, tokens);
     await createSession(userId);

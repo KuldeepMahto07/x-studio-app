@@ -2,16 +2,19 @@
 
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
-import { createSession, destroySession, requireUser, upsertXUser } from "@/lib/auth";
-import { run } from "@/lib/db";
-import { oneClickMode } from "@/lib/env";
+import { headers } from "next/headers";
+import { createSession, destroySession, requireUser } from "@/lib/auth";
+import { authenticate, createAccount, createResetToken, normalizeEmail, rateLimit, resetPassword, validateEmail } from "@/lib/accounts";
+import { cancelTestSubscription, completeTestCheckout, createCheckoutUrl } from "@/lib/billing";
+import { sendMail } from "@/lib/mail";
+import { env } from "@/lib/env";
 import { writePost } from "@/lib/ai";
 import { postNow as firePostNow } from "@/lib/autopilot";
 import {
   addDraft, deletePost, getNiche, markPosted, movePost, queuePost, recentTexts, saveNiche, unreadyPost,
   saveSchedule, setAutopilot, updatePostText, validateText,
 } from "@/lib/posts";
-import { PLANS, type Plan } from "@/lib/types";
+import { PLANS } from "@/lib/types";
 
 export type ActionState = { ok?: string; error?: string; values?: Record<string, string> } | null;
 
@@ -26,16 +29,70 @@ function fail(fd: FormData, error: string): ActionState {
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").replace(/\r\n?/g, "\n").trim();
 const lines = (s: string) => s.split("\n").map((l) => l.trim()).filter(Boolean);
 
+/** Never echo passwords back to the browser. */
+function withoutPassword(fd: FormData) {
+  const copy = new FormData();
+  for (const [k, v] of fd.entries()) if (!/password|confirm/i.test(k)) copy.append(k, v);
+  return copy;
+}
+
+async function clientIp() {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0].trim() || h.get("x-real-ip") || "local";
+}
+
 // ---------- auth ----------
 
-/** One-click mode has no X API, so accounts are local: pick the handle you post as. */
-export async function localLogin(fd: FormData) {
-  if (!oneClickMode) throw new Error("Local accounts are disabled when X API credentials are configured.");
-  const handle = str(fd, "handle").replace(/^@/, "").replace(/[^A-Za-z0-9_]/g, "").slice(0, 15);
-  if (!handle) redirect("/?error=" + encodeURIComponent("Enter your X handle."));
-  const userId = upsertXUser({ id: `local-${handle.toLowerCase()}`, username: handle, name: handle });
+export async function signUpAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const email = str(fd, "email");
+  if (!rateLimit(`signup:${await clientIp()}`, 10, 60 * 60_000)) return fail(fd, "Too many sign-ups from this network. Try again later.");
+  // Locally, an old handle-only account can be upgraded to email sign-in; never online.
+  const result = await createAccount({ email, password: String(fd.get("password") ?? ""), handle: str(fd, "handle") }, { allowClaim: !env.isProd });
+  if (!result.ok) return fail(withoutPassword(fd), result.error);
+  await createSession(result.userId);
+  redirect(getNiche(result.userId) ? "/app" : "/app/setup");
+}
+
+export async function signInAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const email = normalizeEmail(str(fd, "email"));
+  if (!rateLimit(`signin:${email}`, 8, 15 * 60_000) || !rateLimit(`signin-ip:${await clientIp()}`, 30, 15 * 60_000)) {
+    return fail(withoutPassword(fd), "Too many attempts. Wait 15 minutes and try again.");
+  }
+  const userId = await authenticate(email, String(fd.get("password") ?? ""));
+  if (!userId) return fail(withoutPassword(fd), "Wrong email or password.");
   await createSession(userId);
-  redirect(getNiche(userId) ? "/app" : "/app/setup");
+  const next = str(fd, "next");
+  redirect(next.startsWith("/app") ? next : getNiche(userId) ? "/app" : "/app/setup");
+}
+
+export async function forgotPasswordAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const email = normalizeEmail(str(fd, "email"));
+  const problem = validateEmail(email);
+  if (problem) return fail(fd, problem);
+  // Same answer whether or not the account exists, so this can't be used to discover emails.
+  const done = { ok: "If that email has an account, a reset link is on its way. It works for 30 minutes." };
+  if (!rateLimit(`forgot:${email}`, 3, 15 * 60_000)) return done;
+  const token = createResetToken(email);
+  if (token) {
+    const link = `${env.appUrl}/reset?token=${token}`;
+    await sendMail({
+      to: email,
+      subject: "Reset your X Studio password",
+      text: `Reset your password: ${link}
+This link works once and expires in 30 minutes. If you didn't ask for this, ignore this email.`,
+      html: `<p>Reset your X Studio password:</p><p><a href="${link}">Choose a new password</a></p><p>This link works once and expires in 30 minutes. If you didn't ask for this, ignore this email.</p>`,
+    });
+  }
+  return done;
+}
+
+export async function resetPasswordAction(_: ActionState, fd: FormData): Promise<ActionState> {
+  const password = String(fd.get("password") ?? "");
+  if (password !== String(fd.get("confirm") ?? "")) return { error: "The two passwords don't match." };
+  const result = await resetPassword(str(fd, "token"), password);
+  if (!result.ok) return { error: result.error };
+  await createSession(result.userId);
+  redirect("/app?reset=1");
 }
 
 export async function signOut() {
@@ -177,12 +234,27 @@ export async function skipReadyAction(fd: FormData) {
   refresh();
 }
 
-/** Billing isn't wired yet; in one-click (local) mode this lets you switch plans freely. */
-export async function setPlanAction(fd: FormData) {
+// ---------- billing ----------
+
+export async function startCheckoutAction(fd: FormData) {
   const user = await requireUser();
-  if (!oneClickMode) return;
-  const plan = str(fd, "plan") as Plan;
-  if (!(plan in PLANS)) return;
-  run("UPDATE users SET plan = ? WHERE id = ?", plan, user.id);
+  const plan = str(fd, "plan");
+  if (plan !== "pro" && plan !== "creator") return;
+  redirect(await createCheckoutUrl(user, plan, env.appUrl));
+}
+
+/** Local development only: the test checkout's "Pay" button. */
+export async function completeTestCheckoutAction(fd: FormData) {
+  const user = await requireUser();
+  const plan = str(fd, "plan");
+  if (plan !== "pro" && plan !== "creator") return;
+  completeTestCheckout(user.id, plan);
+  redirect(`/app/settings?upgraded=${plan}`);
+}
+
+/** Local development only: simulate cancelling in the customer portal. */
+export async function cancelTestSubscriptionAction(fd: FormData) {
+  const user = await requireUser();
+  cancelTestSubscription(user.id, str(fd, "immediately") === "1");
   refresh();
 }

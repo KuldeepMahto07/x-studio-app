@@ -64,13 +64,46 @@ CREATE TABLE IF NOT EXISTS posts (
   UNIQUE (user_id, slot_key)
 );
 CREATE INDEX IF NOT EXISTS posts_user_status ON posts (user_id, status, position);
+CREATE TABLE IF NOT EXISTS password_resets (
+  token_hash  TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at  INTEGER NOT NULL,
+  used        INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS subscriptions (
+  user_id          TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  provider         TEXT NOT NULL,
+  provider_sub_id  TEXT NOT NULL,
+  customer_id      TEXT,
+  plan             TEXT NOT NULL,
+  status           TEXT NOT NULL,
+  renews_at        TEXT,
+  ends_at          TEXT,
+  portal_url       TEXT,
+  updated_at       TEXT NOT NULL
+);
 `;
+
+// Columns added after the first release. SQLite has no "ADD COLUMN IF NOT EXISTS", so check first.
+const ADDED_COLUMNS: [table: string, column: string, definition: string][] = [
+  ["users", "email", "TEXT"],
+  ["users", "password_hash", "TEXT"],
+];
+
+function migrate(db: DatabaseSync) {
+  for (const [table, column, definition] of ADDED_COLUMNS) {
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!cols.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users (email) WHERE email IS NOT NULL");
+}
 
 function open(): DatabaseSync {
   mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const db = new DatabaseSync(DB_PATH);
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
   db.exec(SCHEMA);
+  migrate(db);
   return db;
 }
 

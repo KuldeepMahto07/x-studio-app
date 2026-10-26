@@ -32,7 +32,7 @@ const FALLBACK_MODEL = "gemini-3.5-flash-lite";
 const TIMEOUT_MS = 25_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-type GeminiResult = { ok: true; text: string } | { ok: false; busy: boolean; error: string };
+type GeminiResult = { ok: true; text: string } | { ok: false; busy: boolean; timedOut?: boolean; error: string };
 
 async function callModel(model: string, prompt: string): Promise<GeminiResult> {
   try {
@@ -49,11 +49,11 @@ async function callModel(model: string, prompt: string): Promise<GeminiResult> {
     return { ok: true, text: json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "" };
   } catch (err) {
     const timedOut = err instanceof Error && err.name === "TimeoutError";
-    return { ok: false, busy: true, error: timedOut ? `Gemini ${model} timed out after ${TIMEOUT_MS / 1000}s` : `Gemini ${model}: ${String(err)}` };
+    return { ok: false, busy: true, timedOut, error: timedOut ? `Gemini ${model} timed out after ${TIMEOUT_MS / 1000}s` : `Gemini ${model}: ${String(err)}` };
   }
 }
 
-/** Calls Gemini with a timeout, one retry when busy, then the fallback model. */
+/** Calls Gemini with a timeout and one quick retry on a busy response, then the fallback model. A hung model goes straight to the fallback. */
 async function callGemini(prompt: string): Promise<string> {
   const models = [...new Set([env.geminiModel, FALLBACK_MODEL])];
   let lastError = "";
@@ -62,7 +62,7 @@ async function callGemini(prompt: string): Promise<string> {
       const result = await callModel(model, prompt);
       if (result.ok) return result.text;
       lastError = result.error;
-      if (!result.busy) break; // e.g. model not available to this key: go straight to the fallback
+      if (!result.busy || result.timedOut) break; // unavailable or hung: don't wait on it again, use the fallback
       if (attempt === 0) await sleep(1500);
     }
   }

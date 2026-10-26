@@ -43,11 +43,19 @@ export async function getUser(): Promise<User | null> {
   return user ?? null;
 }
 
-/** For pages and server actions: returns the signed-in user or redirects to the home page. */
+/** For pages and server actions: returns the signed-in user or redirects to sign-in. */
 export async function requireUser(): Promise<User> {
   const user = await getUser();
-  if (!user) redirect("/?signin=1");
+  if (!user) redirect("/login");
   return user;
+}
+
+/** Attach an X account to an existing (email) user. Fails if that X account belongs to someone else. */
+export function linkXAccount(userId: string, x: { id: string; username: string; name: string; avatar?: string | null }): { ok: true } | { ok: false; error: string } {
+  const owner = get<{ id: string }>("SELECT id FROM users WHERE x_user_id = ?", x.id);
+  if (owner && owner.id !== userId) return { ok: false, error: "That X account is already connected to another X Studio account." };
+  run("UPDATE users SET x_user_id = ?, x_handle = ?, name = ?, avatar_url = ? WHERE id = ?", x.id, x.username, x.name, x.avatar ?? null, userId);
+  return { ok: true };
 }
 
 /** Create or update the user for an X account and return their id. */

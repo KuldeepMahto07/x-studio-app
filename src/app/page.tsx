@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { localLogin } from "./actions";
 import { oneClickMode } from "@/lib/env";
 import { PLANS } from "@/lib/types";
 import { AppIcon } from "@/components/icons";
@@ -13,7 +12,7 @@ export default function Landing() {
           <AppIcon size={30} />
           <span className="text-[20px] font-bold tracking-tight">X Studio</span>
         </span>
-        <a href="#start" className="btn btn-gray btn-sm">Get Started</a>
+        <Link href="/login" className="btn btn-gray btn-sm">Sign In</Link>
       </nav>
 
       <header className="grid items-center gap-12 py-12 md:grid-cols-[1.1fr_1fr] md:py-20">
@@ -27,20 +26,13 @@ export default function Landing() {
           </p>
 
           <div id="start" className="mx-auto mt-8 max-w-sm md:mx-0">
-            {oneClickMode ? (
-              <form action={localLogin} className="space-y-3">
-                <div className="group-list">
-                  <label className="row">
-                    <span className="text-muted">@</span>
-                    <input name="handle" className="field-inset" placeholder="your_handle" required autoComplete="username" />
-                  </label>
-                </div>
-                <button className="btn btn-filled w-full">Get Started, It&apos;s Free</button>
-                <p className="text-[13px] text-muted">No X API needed. Posts open in X with one tap.</p>
-              </form>
-            ) : (
-              <Link href="/api/auth/x/start" prefetch={false} className="btn btn-filled w-full">Sign in with X</Link>
-            )}
+            <div className="flex flex-col gap-3 sm:flex-row md:justify-start">
+              <Link href="/signup" className="btn btn-filled flex-1">Get Started, It&apos;s Free</Link>
+              <Link href="/login" className="btn btn-gray flex-1">Sign In</Link>
+            </div>
+            <p className="mt-3 text-[13px] text-muted">
+              {oneClickMode ? "No X API needed. Posts open in X with one tap." : "Connect your X account after signing up."}
+            </p>
           </div>
         </div>
 

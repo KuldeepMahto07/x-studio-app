@@ -6,6 +6,7 @@ export type User = {
   x_user_id: string;
   x_handle: string;
   name: string;
+  email: string | null;
   avatar_url: string | null;
   plan: Plan;
   timezone: string;

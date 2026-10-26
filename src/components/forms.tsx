@@ -4,11 +4,11 @@ import { useActionState, useOptimistic, useRef, useState, useTransition, type Po
 import { useFormStatus } from "react-dom";
 import {
   deleteAction, generateDrafts, moveDownAction, moveUpAction, postNowAction, queueAction, saveNicheAction,
-  saveScheduleAction, saveTextAction, setPlanAction, toggleAutopilot, type ActionState,
+  saveScheduleAction, saveTextAction, toggleAutopilot, type ActionState,
 } from "@/app/actions";
-import { Flash, PostTextarea, Segmented, Spinner, SubmitButton, Switch } from "./ui";
-import { IconArrowDown, IconArrowUp, IconBolt, IconCheck, IconChevron, IconPlus, IconSparkles, IconTrash } from "./icons";
-import { PLANS, type Niche, type Plan, type Post } from "@/lib/types";
+import { Flash, PostTextarea, Segmented, SubmitButton, Switch } from "./ui";
+import { IconArrowDown, IconArrowUp, IconBolt, IconChevron, IconPlus, IconSparkles, IconTrash } from "./icons";
+import type { Niche, Post } from "@/lib/types";
 
 // ---------- Niche ----------
 
@@ -292,39 +292,5 @@ export function ScheduleForm({ timezone, slots, maxSlots }: { timezone: string; 
         <Flash state={state} />
       </div>
     </form>
-  );
-}
-
-export function PlanPicker({ current, canSwitch }: { current: Plan; canSwitch: boolean }) {
-  const [pending, startTransition] = useTransition();
-  const [chosen, setChosen] = useOptimistic(current);
-  return (
-    <div className="group-list">
-      {(Object.keys(PLANS) as Plan[]).map((key) => {
-        const p = PLANS[key];
-        return (
-          <button
-            key={key}
-            type="button"
-            disabled={!canSwitch || pending}
-            onClick={() =>
-              startTransition(async () => {
-                setChosen(key);
-                const fd = new FormData();
-                fd.set("plan", key);
-                await setPlanAction(fd);
-              })
-            }
-            className="row-link w-full text-left disabled:active:bg-transparent"
-          >
-            <span className="flex-1">
-              <span className="block">{p.label} <span className="text-muted">· {p.price}</span></span>
-              <span className="block text-[13px] text-muted">{p.postsPerDay} a day · {p.postsPerMonth} a month</span>
-            </span>
-            {chosen === key ? <IconCheck width={20} height={20} className="text-accent" /> : pending && <Spinner />}
-          </button>
-        );
-      })}
-    </div>
   );
 }
