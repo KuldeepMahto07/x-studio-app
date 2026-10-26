@@ -22,7 +22,8 @@ function fail(fd: FormData, error: string): ActionState {
   return { error, values };
 }
 
-const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
+// Browsers submit textarea line breaks as \r\n; normalise so X's 280-character count matches what you see.
+const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").replace(/\r\n?/g, "\n").trim();
 const lines = (s: string) => s.split("\n").map((l) => l.trim()).filter(Boolean);
 
 // ---------- auth ----------

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { IconBell } from "./icons";
 
 const POLL_MS = 60_000;
 const noopSubscribe = () => () => {};
@@ -53,10 +54,14 @@ export function ReadyWatcher() {
 
   if (permission !== "default") return null;
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-accent/40 bg-accent/5 px-4 py-2.5 text-sm">
-      <span className="flex-1">Get a notification when a post is ready (keep this tab open).</span>
-      <button className="btn" onClick={async () => setAsked(await Notification.requestPermission())}>
-        Turn on reminders
+    <div className="mt-3 flex animate-pop items-center gap-3 rounded-2xl bg-panel px-4 py-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-[9px] bg-bad text-white"><IconBell width={20} height={20} /></span>
+      <span className="flex-1 text-[15px] leading-tight">
+        <span className="block font-semibold">Turn on reminders</span>
+        <span className="text-muted">Get notified when a post is ready. Keep this tab open.</span>
+      </span>
+      <button className="btn btn-tinted btn-sm" onClick={async () => setAsked(await Notification.requestPermission())}>
+        Allow
       </button>
     </div>
   );

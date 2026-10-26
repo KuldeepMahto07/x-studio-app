@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "X Studio: autopilot for your X niche",
   description: "Tell it your niche once. X Studio writes and posts in your voice, on schedule.",
+};
+
+export const viewport: Viewport = {
+  viewportFit: "cover", // lets the tab bar sit in the home-indicator safe area
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f2f2f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

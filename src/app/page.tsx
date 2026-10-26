@@ -2,83 +2,105 @@ import Link from "next/link";
 import { localLogin } from "./actions";
 import { oneClickMode } from "@/lib/env";
 import { PLANS } from "@/lib/types";
+import { AppIcon, IconBell, IconList, IconSparkles } from "@/components/icons";
 
-const steps = [
-  ["Set your niche", "Topics, audience and voice. Takes two minutes."],
-  ["Approve or skip", "Drafts land in a queue. Edit, reorder, or let it run."],
-  ["It's ready on time", "At your chosen times, every day. Post with one click, or go fully automatic."],
+const features = [
+  { Icon: IconSparkles, color: "bg-warn", title: "Writes in your niche", body: "Set your topics and voice once. AI drafts posts that sound like you." },
+  { Icon: IconList, color: "bg-accent", title: "You stay in control", body: "Approve, edit, and reorder a queue. Or let it run." },
+  { Icon: IconBell, color: "bg-bad", title: "Ready on time", body: "At your chosen times, post with one tap, or go fully automatic." },
 ];
 
-export default function Home() {
+export default function Landing() {
   return (
-    <div className="mx-auto w-full max-w-5xl px-6">
-      <nav className="flex items-center justify-between py-6">
-        <div className="text-lg font-extrabold">
-          X <span className="text-accent">Studio</span>
-        </div>
-        <a href="#signin" className="text-sm text-muted hover:text-ink">Sign in →</a>
+    <div className="mx-auto w-full max-w-5xl px-5">
+      <nav className="flex items-center justify-between py-5">
+        <span className="flex items-center gap-2.5">
+          <AppIcon size={30} />
+          <span className="text-[20px] font-bold tracking-tight">X Studio</span>
+        </span>
+        <a href="#start" className="btn btn-gray btn-sm">Get Started</a>
       </nav>
 
-      <header className="py-16 text-center">
-        <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-          Post every day on X without writing every day.
-        </h1>
-        <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
-          Tell X Studio your niche once. It writes posts in your voice and publishes them on your schedule.
-          Review the queue whenever you want, or don&apos;t.
-        </p>
+      <header className="grid items-center gap-12 py-12 md:grid-cols-[1.1fr_1fr] md:py-20">
+        <div className="animate-rise text-center md:text-left">
+          <h1 className="text-[44px] font-bold leading-[1.05] tracking-tight sm:text-[56px]">
+            Post every day on X.<br />
+            <span className="bg-gradient-to-r from-[#0a84ff] to-[#bf5af2] bg-clip-text text-transparent">Without writing every day.</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-md text-[19px] text-muted md:mx-0">
+            Tell X Studio your niche once. It writes posts in your voice and has them ready on your schedule.
+          </p>
 
-        <div id="signin" className="mx-auto mt-9 max-w-md">
-          {oneClickMode ? (
-            <form action={localLogin} className="card text-left">
-              <p className="mb-3 text-sm text-muted">
-                <span className="tag mr-1.5 border-accent/40 text-accent">Free one-click mode</span>
-                X Studio writes and schedules; at post time you publish with one click.
-              </p>
-              <label className="label" htmlFor="handle">Your X handle</label>
-              <div className="flex gap-2">
-                <input id="handle" name="handle" className="field" placeholder="@your_handle" required />
-                <button className="btn btn-primary shrink-0">Start</button>
+          <div id="start" className="mx-auto mt-8 max-w-sm md:mx-0">
+            {oneClickMode ? (
+              <form action={localLogin} className="space-y-3">
+                <div className="group-list">
+                  <label className="row">
+                    <span className="text-muted">@</span>
+                    <input name="handle" className="field-inset" placeholder="your_handle" required autoComplete="username" />
+                  </label>
+                </div>
+                <button className="btn btn-filled w-full">Get Started, It&apos;s Free</button>
+                <p className="text-[13px] text-muted">No X API needed. Posts open in X with one tap.</p>
+              </form>
+            ) : (
+              <Link href="/api/auth/x/start" prefetch={false} className="btn btn-filled w-full">Sign in with X</Link>
+            )}
+          </div>
+        </div>
+
+        {/* Phone mockup with a live-looking notification */}
+        <div className="relative mx-auto w-[290px] animate-rise" style={{ animationDelay: "120ms" }}>
+          <div className="absolute -inset-10 -z-10 rounded-full bg-gradient-to-tr from-[#0a84ff]/30 via-[#bf5af2]/20 to-transparent blur-3xl" />
+          <div className="rounded-[48px] bg-[#1c1c1e] p-3 shadow-2xl ring-1 ring-white/10">
+            <div className="relative h-[560px] overflow-hidden rounded-[38px] bg-gradient-to-b from-[#1e3a8a] via-[#6d28d9] to-[#0f172a] px-3 pt-14">
+              <div className="absolute left-1/2 top-3 h-7 w-24 -translate-x-1/2 rounded-full bg-black" />
+              <p className="text-center text-[64px] font-light leading-none text-white/90">9:00</p>
+              <p className="mb-8 text-center text-[15px] text-white/70">Monday, 26 October</p>
+              <div className="animate-float">
+                <div className="rounded-[20px] bg-white/75 p-3 text-black shadow-lg backdrop-blur-xl">
+                  <div className="mb-1 flex items-center gap-2 text-[12px] text-black/50">
+                    <AppIcon size={18} />
+                    <span className="font-semibold uppercase">X Studio</span>
+                    <span className="ml-auto">now</span>
+                  </div>
+                  <p className="text-[14px] font-semibold">Time to post</p>
+                  <p className="text-[14px] leading-snug">3 free AI tools saving me $50+/mo: Continue.dev, DeepSeek V3, FLUX.1…</p>
+                </div>
               </div>
-            </form>
-          ) : (
-            <Link href="/api/auth/x/start" prefetch={false} className="btn btn-primary px-6 py-3 text-base">
-              Sign in with X
-            </Link>
-          )}
+              <div className="mt-2 rounded-[20px] bg-white/40 p-3 opacity-70 backdrop-blur-xl">
+                <div className="h-2.5 w-24 rounded bg-black/20" />
+                <div className="mt-2 h-2.5 w-44 rounded bg-black/10" />
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
-      <section className="grid gap-4 border-t border-line py-14 sm:grid-cols-3">
-        {steps.map(([title, body], i) => (
-          <div key={title} className="card">
-            <div className="mb-2 text-sm font-extrabold text-accent">0{i + 1}</div>
-            <h3 className="font-semibold">{title}</h3>
-            <p className="mt-1 text-sm text-muted">{body}</p>
+      <section className="grid gap-3 py-10 sm:grid-cols-3">
+        {features.map(({ Icon, color, title, body }, i) => (
+          <div key={title} className="card animate-rise" style={{ animationDelay: `${200 + i * 70}ms` }}>
+            <span className={`mb-3 grid size-10 place-items-center rounded-[10px] text-white ${color}`}><Icon width={22} height={22} /></span>
+            <h3 className="text-[17px] font-semibold">{title}</h3>
+            <p className="mt-1 text-[15px] text-muted">{body}</p>
           </div>
         ))}
       </section>
 
-      <section className="border-t border-line py-14">
-        <h2 className="mb-8 text-center text-3xl font-bold tracking-tight">Simple pricing</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+      <section className="py-10">
+        <h2 className="mb-6 text-center text-[28px] font-bold tracking-tight">Simple pricing</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
           {Object.entries(PLANS).map(([key, p]) => (
-            <div key={key} className={`card text-center ${key === "pro" ? "border-accent" : ""}`}>
+            <div key={key} className={`card text-center ${key === "pro" ? "ring-2 ring-accent" : ""}`}>
               <h3 className="font-semibold">{p.label}</h3>
-              <div className="my-2 text-4xl font-extrabold tracking-tight">{p.price}</div>
-              <ul className="space-y-1 text-left text-sm text-muted">
-                <li>✓ Up to {p.postsPerDay} post{p.postsPerDay > 1 ? "s" : ""} a day</li>
-                <li>✓ {p.postsPerMonth} posts a month</li>
-                <li>✓ AI drafts and approval queue</li>
-              </ul>
+              <div className="my-1 text-[40px] font-bold tracking-tight">{p.price}</div>
+              <p className="text-[15px] text-muted">{p.postsPerDay} post{p.postsPerDay > 1 ? "s" : ""} a day · {p.postsPerMonth} a month</p>
             </div>
           ))}
         </div>
       </section>
 
-      <footer className="border-t border-line py-10 text-center text-sm text-muted">
-        © 2026 X Studio · Not affiliated with X Corp.
-      </footer>
+      <footer className="py-10 text-center text-[13px] text-muted">© 2026 X Studio · Not affiliated with X Corp.</footer>
     </div>
   );
 }

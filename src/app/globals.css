@@ -1,49 +1,148 @@
 @import "tailwindcss";
 
+/* iOS system palette (light), switched to the dark palette by the OS setting. */
+:root {
+  --bg: #f2f2f7;
+  --bg-2: #ffffff;
+  --bg-3: #e9e9ee;
+  --fill: rgba(120, 120, 128, 0.12);
+  --fill-2: rgba(120, 120, 128, 0.2);
+  --label: #000000;
+  --label-2: rgba(60, 60, 67, 0.6);
+  --label-3: rgba(60, 60, 67, 0.3);
+  --sep: rgba(60, 60, 67, 0.22);
+  --blue: #007aff;
+  --green: #34c759;
+  --red: #ff3b30;
+  --orange: #ff9500;
+  --purple: #af52de;
+  --bar: rgba(249, 249, 249, 0.78);
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --bg-2: #1c1c1e;
+    --bg-3: #2c2c2e;
+    --fill: rgba(120, 120, 128, 0.24);
+    --fill-2: rgba(120, 120, 128, 0.36);
+    --label: #ffffff;
+    --label-2: rgba(235, 235, 245, 0.6);
+    --label-3: rgba(235, 235, 245, 0.3);
+    --sep: rgba(84, 84, 88, 0.55);
+    --blue: #0a84ff;
+    --green: #30d158;
+    --red: #ff453a;
+    --orange: #ff9f0a;
+    --purple: #bf5af2;
+    --bar: rgba(28, 28, 30, 0.72);
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  }
+}
+
 @theme inline {
-  --color-bg: #0b0d10;
-  --color-panel: #13161b;
-  --color-panel-2: #1a1e25;
-  --color-line: #252a33;
-  --color-ink: #e7e9ee;
-  --color-muted: #8b93a3;
-  --color-accent: #4c9aff;
-  --color-accent-ink: #06121f;
-  --color-ok: #3ecf8e;
-  --color-warn: #f5a524;
-  --color-bad: #ff5c6c;
-  --font-sans: var(--font-geist-sans);
+  --color-bg: var(--bg);
+  --color-panel: var(--bg-2);
+  --color-panel-2: var(--bg-3);
+  --color-fill: var(--fill);
+  --color-fill-2: var(--fill-2);
+  --color-ink: var(--label);
+  --color-muted: var(--label-2);
+  --color-faint: var(--label-3);
+  --color-line: var(--sep);
+  --color-accent: var(--blue);
+  --color-ok: var(--green);
+  --color-bad: var(--red);
+  --color-warn: var(--orange);
+  --color-purple: var(--purple);
+  --color-bar: var(--bar);
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-ink);
+  background: var(--bg);
+  color: var(--label);
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Entrance animation; stagger with style={{ animationDelay }} */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pop {
+  0% { opacity: 0; transform: translateY(-12px) scale(0.96); }
+  60% { opacity: 1; transform: translateY(2px) scale(1.01); }
+  100% { transform: none; }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Press feedback like UIKit buttons */
+@utility pressable {
+  transition-property: transform, opacity, background-color;
+  transition-duration: 150ms;
+  &:active { transform: scale(0.97); opacity: 0.8; }
 }
 
 @layer components {
+  .animate-rise { animation: rise 0.5s var(--ease-spring) both; }
+  .animate-pop { animation: pop 0.55s var(--ease-spring) both; }
+  .animate-float { animation: float 5s ease-in-out infinite; }
+  .skeleton {
+    background: linear-gradient(90deg, var(--fill) 25%, var(--fill-2) 50%, var(--fill) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+
+  /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-panel-2 px-3.5 py-2 text-sm font-medium text-ink transition hover:border-[#3a4150] disabled:cursor-default disabled:opacity-50;
+    @apply pressable inline-flex h-11 select-none items-center justify-center gap-1.5 rounded-xl px-5 text-[17px] font-semibold disabled:pointer-events-none disabled:opacity-40;
   }
-  .btn-primary {
-    @apply border-accent bg-accent font-semibold text-accent-ink hover:border-accent hover:brightness-110;
+  .btn-filled { @apply bg-accent text-white; }
+  .btn-tinted { @apply bg-accent/15 text-accent; }
+  .btn-gray { @apply bg-fill text-ink; }
+  .btn-plain { @apply h-auto px-0 font-normal text-accent; }
+  .btn-destructive { @apply bg-bad/15 text-bad; }
+  .btn-sm { @apply h-8 rounded-full px-3.5 text-[15px]; }
+
+  /* Inset grouped list (Settings-style) */
+  .group-list { @apply overflow-hidden rounded-xl bg-panel; }
+  /* Hairline separators inset from the left edge, like UITableView */
+  .group-list > * + * { position: relative; }
+  .group-list > * + *::before {
+    content: ""; position: absolute; top: 0; left: var(--sep-inset, 16px); right: 0;
+    height: 0.5px; background: var(--sep); pointer-events: none;
   }
-  .btn-ghost {
-    @apply bg-transparent;
-  }
-  .btn-danger {
-    @apply hover:border-bad hover:text-bad;
-  }
-  .card {
-    @apply rounded-xl border border-line bg-panel p-4;
-  }
+  .row { @apply flex min-h-11 items-center gap-3 px-4 py-2.5; }
+  .row-link { @apply flex min-h-11 items-center gap-3 px-4 py-2.5 transition-colors active:bg-fill; }
+  .section-header { @apply mb-1.5 px-4 text-[13px] uppercase tracking-wide text-muted; }
+  .section-footer { @apply mt-1.5 px-4 text-[13px] text-muted; }
+
+  /* Cards and fields */
+  .card { @apply rounded-2xl bg-panel p-4; }
   .field {
-    @apply w-full rounded-lg border border-line bg-panel-2 px-3 py-2.5 text-ink outline-none placeholder:text-muted focus:border-accent;
+    @apply w-full rounded-xl bg-panel px-4 py-3 text-[17px] text-ink outline-none placeholder:text-faint focus:ring-2 focus:ring-accent/50;
   }
-  .label {
-    @apply mb-1.5 block text-sm font-semibold;
-  }
-  .tag {
-    @apply rounded-md border border-line bg-panel-2 px-2 py-0.5 text-xs text-muted;
-  }
+  .field-inset { @apply w-full bg-transparent text-[17px] text-ink outline-none placeholder:text-faint; }
+  .chip { @apply rounded-full bg-fill px-2.5 py-0.5 text-[12px] font-medium text-muted; }
+
+  .large-title { @apply text-[34px] leading-[41px] font-bold tracking-[0.01em]; }
+  .material { @apply bg-bar backdrop-blur-xl backdrop-saturate-150; }
 }

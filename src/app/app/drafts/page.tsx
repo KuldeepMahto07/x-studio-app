@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getNiche, listPosts } from "@/lib/posts";
-import { DraftCard, GenerateForm, ManualPostForm } from "@/components/forms";
+import { ComposeCard, DraftCard, GenerateForm } from "@/components/forms";
+import { LargeTitle } from "@/components/ui";
 
 // Per-user page: render at request time.
 export const instant = false;
@@ -12,19 +13,20 @@ export default async function DraftsPage({ searchParams }: PageProps<"/app/draft
   const welcome = (await searchParams).welcome === "1";
   const drafts = listPosts(user.id, "draft");
   return (
-    <div className="max-w-3xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Drafts</h1>
-        <p className="mt-1 text-muted">AI writes posts in your niche. Edit them, then add the good ones to your queue.</p>
-      </div>
-      {welcome && !drafts.length && (
-        <div className="rounded-lg border border-accent/40 bg-accent/5 px-4 py-3 text-sm">
-          Niche saved. Generate your first drafts below.
+    <>
+      <LargeTitle title="Drafts" subtitle="AI writes in your niche. Keep the good ones." />
+      <div className="space-y-4">
+        {welcome && !drafts.length && (
+          <div className="animate-pop rounded-2xl bg-accent/12 px-4 py-3 text-[15px] text-accent">
+            You&apos;re all set. Generate your first drafts.
+          </div>
+        )}
+        <GenerateForm />
+        <div className="space-y-3">
+          {drafts.map((d, i) => <DraftCard key={d.id} post={d} index={i} />)}
         </div>
-      )}
-      <GenerateForm />
-      {drafts.map((d) => <DraftCard key={d.id} post={d} />)}
-      <ManualPostForm />
-    </div>
+        <ComposeCard />
+      </div>
+    </>
   );
 }
