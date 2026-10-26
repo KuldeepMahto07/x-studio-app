@@ -124,11 +124,11 @@ export function QueueCard({ post, index, total }: { post: Post; index: number; t
   );
 }
 
-export function PostNowButton() {
+export function PostNowButton({ oneClick }: { oneClick: boolean }) {
   const [state, action] = useActionState<ActionState, FormData>(postNowAction, null);
   return (
     <form action={action} className="flex items-center gap-3">
-      <SubmitButton pendingText="Posting…">Post one now</SubmitButton>
+      <SubmitButton pendingText={oneClick ? "Preparing…" : "Posting…"}>{oneClick ? "Get one ready" : "Post one now"}</SubmitButton>
       <Flash state={state} />
     </form>
   );

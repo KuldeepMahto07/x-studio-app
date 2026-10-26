@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
 import { createSession, destroySession, requireUser, upsertXUser } from "@/lib/auth";
 import { run } from "@/lib/db";
-import { demoMode } from "@/lib/env";
+import { oneClickMode } from "@/lib/env";
 import { writePost } from "@/lib/ai";
 import { postNow as firePostNow } from "@/lib/autopilot";
 import {
-  addDraft, deletePost, getNiche, movePost, queuePost, recentTexts, saveNiche,
+  addDraft, deletePost, getNiche, markPosted, movePost, queuePost, recentTexts, saveNiche, unreadyPost,
   saveSchedule, setAutopilot, updatePostText, validateText,
 } from "@/lib/posts";
 import { PLANS, type Plan } from "@/lib/types";
@@ -27,10 +27,12 @@ const lines = (s: string) => s.split("\n").map((l) => l.trim()).filter(Boolean);
 
 // ---------- auth ----------
 
-export async function demoLogin(fd: FormData) {
-  if (!demoMode) throw new Error("Demo login is disabled when X credentials are configured.");
-  const handle = str(fd, "handle").replace(/^@/, "").replace(/[^A-Za-z0-9_]/g, "").slice(0, 15) || "demo_builder";
-  const userId = upsertXUser({ id: `demo-${handle.toLowerCase()}`, username: handle, name: handle });
+/** One-click mode has no X API, so accounts are local: pick the handle you post as. */
+export async function localLogin(fd: FormData) {
+  if (!oneClickMode) throw new Error("Local accounts are disabled when X API credentials are configured.");
+  const handle = str(fd, "handle").replace(/^@/, "").replace(/[^A-Za-z0-9_]/g, "").slice(0, 15);
+  if (!handle) redirect("/?error=" + encodeURIComponent("Enter your X handle."));
+  const userId = upsertXUser({ id: `local-${handle.toLowerCase()}`, username: handle, name: handle });
   await createSession(userId);
   redirect(getNiche(userId) ? "/app" : "/app/setup");
 }
@@ -136,6 +138,7 @@ export async function postNowAction(): Promise<ActionState> {
   const result = await firePostNow(user);
   refresh();
   if (result.status === "posted") return { ok: "Posted!" };
+  if (result.status === "ready") return { ok: "Ready! Click Post on X above." };
   return { error: result.detail };
 }
 
@@ -159,10 +162,24 @@ export async function saveScheduleAction(_: ActionState, fd: FormData): Promise<
   };
 }
 
-/** Billing isn't wired yet; in demo mode this lets you try each plan's limits. */
+// ---------- one-click posting ----------
+
+export async function markPostedAction(fd: FormData) {
+  const user = await requireUser();
+  markPosted(user.id, str(fd, "id"));
+  refresh();
+}
+
+export async function skipReadyAction(fd: FormData) {
+  const user = await requireUser();
+  unreadyPost(user.id, str(fd, "id"));
+  refresh();
+}
+
+/** Billing isn't wired yet; in one-click (local) mode this lets you switch plans freely. */
 export async function setPlanAction(fd: FormData) {
   const user = await requireUser();
-  if (!demoMode) return;
+  if (!oneClickMode) return;
   const plan = str(fd, "plan") as Plan;
   if (!(plan in PLANS)) return;
   run("UPDATE users SET plan = ? WHERE id = ?", plan, user.id);

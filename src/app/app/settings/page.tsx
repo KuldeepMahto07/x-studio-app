@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { demoMode } from "@/lib/env";
+import { oneClickMode } from "@/lib/env";
 import { getSlots } from "@/lib/posts";
 import { PLANS, type Plan } from "@/lib/types";
 import { ScheduleForm } from "@/components/forms";
@@ -34,8 +34,8 @@ export default async function SettingsPage() {
               <div className="mb-3 text-sm text-muted">{PLANS[key].postsPerDay}/day · {PLANS[key].maxSlots} time slot{PLANS[key].maxSlots > 1 ? "s" : ""}</div>
               {key === user.plan ? (
                 <span className="tag">Current plan</span>
-              ) : demoMode ? (
-                <button className="btn">Switch (demo)</button>
+              ) : oneClickMode ? (
+                <button className="btn">Switch</button>
               ) : (
                 <span className="tag">Billing coming soon</span>
               )}

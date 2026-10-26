@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { demoMode, fakeAi } from "@/lib/env";
+import { oneClickMode, fakeAi } from "@/lib/env";
 import { PLANS } from "@/lib/types";
 import { NavLinks } from "@/components/nav";
+import { ReadyWatcher } from "@/components/ready-watcher";
 import { signOut } from "../actions";
 
 // Every page here depends on the signed-in user, so let the segment wait for the session.
@@ -26,12 +27,12 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
         </div>
       </aside>
       <main className="min-w-0 flex-1">
-        {(demoMode || fakeAi) && (
+        {fakeAi && (
           <div className="mb-5 rounded-lg border border-warn/40 bg-warn/5 px-4 py-2.5 text-sm text-warn">
-            {demoMode && "Demo mode: posts are recorded here, not sent to X. "}
-            {fakeAi && "No GEMINI_API_KEY: drafts are placeholders."}
+            No GEMINI_API_KEY: drafts are placeholders.
           </div>
         )}
+        {oneClickMode && <ReadyWatcher />}
         {children}
       </main>
     </div>

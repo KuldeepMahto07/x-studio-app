@@ -2,6 +2,7 @@ import "server-only";
 import { all, get, newId, nowIso, run } from "./db";
 import { writePost } from "./ai";
 import { publishPost } from "./x";
+import { oneClickMode } from "./env";
 import { getNiche, getSlots, postedCountSince, recentTexts } from "./posts";
 import { PLANS, type Post, type User } from "./types";
 
@@ -22,7 +23,7 @@ export function localNow(timezone: string, at = new Date()) {
 
 const toMinutes = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 
-export type RunResult = { userId: string; slot: string; status: "posted" | "failed" | "skipped"; detail: string };
+export type RunResult = { userId: string; slot: string; status: "posted" | "ready" | "failed" | "skipped"; detail: string };
 
 /** Claims the slot by inserting/updating a row with a unique (user_id, slot_key); returns null if already claimed. */
 function claimSlot(user: User, slotKey: string): Post | null {
@@ -75,6 +76,11 @@ async function fireSlot(user: User, slotKey: string): Promise<RunResult> {
       const written = await writePost(niche, recentTexts(user.id));
       text = written.text;
       run("UPDATE posts SET text = ?, topic = ?, format = ? WHERE id = ?", text, written.topic, written.format, post.id);
+    }
+    if (oneClickMode) {
+      // Free mode: hand the post to the user to publish with one click.
+      run("UPDATE posts SET status = 'ready', error = NULL WHERE id = ?", post.id);
+      return { ...base, status: "ready", detail: text };
     }
     const xId = await publishPost(user.id, text);
     run("UPDATE posts SET status = 'posted', x_post_id = ?, posted_at = ?, error = NULL WHERE id = ?", xId, nowIso(), post.id);

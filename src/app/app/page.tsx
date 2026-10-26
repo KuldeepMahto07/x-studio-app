@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getNiche, getSlots, listHistory, listPosts, postedCountSince } from "@/lib/posts";
+import { getNiche, getSlots, listHistory, listPosts, listReady, postedCountSince } from "@/lib/posts";
 import { localNow } from "@/lib/autopilot";
 import { PLANS } from "@/lib/types";
 import { toggleAutopilot } from "../actions";
 import { PostNowButton } from "@/components/forms";
+import { ReadyCard } from "@/components/ready";
+import { oneClickMode } from "@/lib/env";
 
 function nextSlot(slots: string[], timezone: string) {
   const { minutes } = localNow(timezone);
@@ -28,6 +30,7 @@ export default async function Overview() {
   const usedThisMonth = postedCountSince(user.id, monthStart);
   const recent = listHistory(user.id, 3);
   const on = user.autopilot === 1;
+  const ready = listReady(user.id);
 
   const stats = [
     ["Queue", `${queued.length} post${queued.length === 1 ? "" : "s"}`, "/app/queue"],
@@ -39,6 +42,13 @@ export default async function Overview() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight">Overview</h1>
 
+      {ready.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="font-semibold text-accent">Ready to post ({ready.length})</h2>
+          {ready.map((p) => <ReadyCard key={p.id} post={p} />)}
+        </section>
+      )}
+
       <div className={`card flex flex-wrap items-center gap-4 ${on ? "border-ok/50" : ""}`}>
         <div className="flex-1">
           <div className="flex items-center gap-2 font-semibold">
@@ -47,8 +57,10 @@ export default async function Overview() {
           </div>
           <p className="mt-1 text-sm text-muted">
             {on
-              ? `Next post ${nextSlot(slots, user.timezone)} (${user.timezone}). ${queued.length ? "It will use your queue first." : "Queue is empty, so it will write one in your niche."}`
-              : "Turn it on and X Studio posts at your scheduled times."}
+              ? `Next post ${nextSlot(slots, user.timezone)} (${user.timezone}). ${queued.length ? "It will use your queue first." : "Queue is empty, so it will write one in your niche."}${oneClickMode ? " You'll get a reminder to publish it with one click." : ""}`
+              : oneClickMode
+                ? "Turn it on and X Studio gets a post ready at each of your scheduled times."
+                : "Turn it on and X Studio posts at your scheduled times."}
           </p>
         </div>
         <form action={toggleAutopilot}>
@@ -67,9 +79,11 @@ export default async function Overview() {
       </div>
 
       <div className="card space-y-3">
-        <div className="font-semibold">Post right now</div>
-        <p className="text-sm text-muted">Publishes the next queued post, or writes a fresh one if the queue is empty.</p>
-        <PostNowButton />
+        <div className="font-semibold">{oneClickMode ? "Get a post ready now" : "Post right now"}</div>
+        <p className="text-sm text-muted">
+          {oneClickMode ? "Takes" : "Publishes"} the next queued post, or writes a fresh one if the queue is empty.
+        </p>
+        <PostNowButton oneClick={oneClickMode} />
       </div>
 
       <div>

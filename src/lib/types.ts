@@ -1,5 +1,5 @@
 export type Plan = "free" | "pro" | "creator";
-export type PostStatus = "draft" | "queued" | "posting" | "posted" | "failed";
+export type PostStatus = "draft" | "queued" | "posting" | "ready" | "posted" | "failed";
 
 export type User = {
   id: string;
@@ -43,3 +43,6 @@ export const PLANS: Record<Plan, { label: string; price: string; postsPerDay: nu
   pro: { label: "Pro", price: "$9/mo", postsPerDay: 3, postsPerMonth: 100, maxSlots: 3 },
   creator: { label: "Creator", price: "$19/mo", postsPerDay: 10, postsPerMonth: 320, maxSlots: 10 },
 };
+
+/** X's share link: opens the composer with the text filled in. Free, no API needed. */
+export const xIntentUrl = (text: string) => `https://x.com/intent/post?text=${encodeURIComponent(text)}`;

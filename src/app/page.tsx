@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { demoLogin } from "./actions";
-import { demoMode } from "@/lib/env";
+import { localLogin } from "./actions";
+import { oneClickMode } from "@/lib/env";
 import { PLANS } from "@/lib/types";
 
 const steps = [
   ["Set your niche", "Topics, audience and voice. Takes two minutes."],
   ["Approve or skip", "Drafts land in a queue. Edit, reorder, or let it run."],
-  ["It posts on autopilot", "At your chosen times, every day, even when you're busy."],
+  ["It's ready on time", "At your chosen times, every day. Post with one click, or go fully automatic."],
 ];
 
 export default function Home() {
@@ -29,16 +29,16 @@ export default function Home() {
         </p>
 
         <div id="signin" className="mx-auto mt-9 max-w-md">
-          {demoMode ? (
-            <form action={demoLogin} className="card text-left">
+          {oneClickMode ? (
+            <form action={localLogin} className="card text-left">
               <p className="mb-3 text-sm text-muted">
-                <span className="tag mr-1.5 border-warn/40 text-warn">Demo mode</span>
-                No X app keys yet, so sign-in is simulated and posts aren&apos;t sent to X.
+                <span className="tag mr-1.5 border-accent/40 text-accent">Free one-click mode</span>
+                X Studio writes and schedules; at post time you publish with one click.
               </p>
-              <label className="label" htmlFor="handle">Pick a demo handle</label>
+              <label className="label" htmlFor="handle">Your X handle</label>
               <div className="flex gap-2">
-                <input id="handle" name="handle" className="field" placeholder="@your_handle" />
-                <button className="btn btn-primary shrink-0">Enter demo</button>
+                <input id="handle" name="handle" className="field" placeholder="@your_handle" required />
+                <button className="btn btn-primary shrink-0">Start</button>
               </div>
             </form>
           ) : (

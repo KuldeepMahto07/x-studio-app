@@ -11,7 +11,8 @@ export const env = {
   isProd: process.env.NODE_ENV === "production",
 };
 
-// Without X credentials the app runs in demo mode: "Sign in with X" becomes a
-// local demo login and posts are recorded instead of sent to X.
-export const demoMode = !env.xClientId;
+// Without X API credentials the app runs in one-click mode (free): accounts are local,
+// and at each scheduled time a post is made ready for the user to publish with one click
+// through X's share link. With credentials, autopilot posts through the X API.
+export const oneClickMode = !env.xClientId;
 export const fakeAi = !env.geminiKey;

@@ -1,7 +1,7 @@
 import "server-only";
 import { get, run } from "./db";
 import { decrypt, encrypt, randomToken, sha256base64url } from "./crypto";
-import { demoMode, env } from "./env";
+import { env } from "./env";
 
 // X API v2 with OAuth 2.0 Authorization Code + PKCE.
 const AUTHORIZE_URL = "https://x.com/i/oauth2/authorize";
@@ -89,9 +89,8 @@ export async function fetchMe(accessToken: string) {
   return { id: data.id, username: data.username, name: data.name, avatar: data.profile_image_url ?? null };
 }
 
-/** Publishes a post and returns its X id. In demo mode nothing is sent to X. */
+/** Publishes a post through the X API and returns its X id. */
 export async function publishPost(userId: string, text: string): Promise<string> {
-  if (demoMode) return `demo-${Date.now()}`;
   const token = await accessTokenFor(userId);
   const res = await fetch(`${API}/tweets`, {
     method: "POST",

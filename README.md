@@ -9,10 +9,13 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. Without keys the app runs in **demo mode**:
-- "Sign in with X" becomes a demo login (pick any handle).
-- Posts are recorded in History instead of being sent to X.
-- Drafts are placeholders until you add `GEMINI_API_KEY`.
+Open http://localhost:3000. Without X API keys the app runs in **free one-click mode**:
+- You start with your X handle (a local account; no X API needed).
+- At each scheduled time, a post is prepared (from your queue, or written by Gemini) and you get a browser notification.
+- **Post on X** opens X's composer with the post already typed; you press Post. Uses X's free share link, so it costs nothing and is safe for your account.
+- Drafts are placeholders until you add `GEMINI_API_KEY` (free at https://aistudio.google.com/apikey).
+
+Add `X_CLIENT_ID` / `X_CLIENT_SECRET` to switch to **full autopilot** (posts through the X API, about $0.015 per post).
 
 To make autopilot fire while `npm run dev` is running, set `AUTOPILOT_TIMER=1` in `.env.local`, or call the worker yourself:
 
@@ -26,7 +29,8 @@ curl http://localhost:3000/api/cron/autopilot
 - **Drafts**: AI writes posts in your niche; edit, discard, or add to the queue. Write your own too.
 - **Queue**: reorder, edit, remove. Autopilot posts from the top.
 - **Autopilot**: posts at your times in your timezone; writes a fresh post when the queue is empty. Each time slot can only post once, even if the worker runs twice.
-- **Plans**: Free (1/day, 10/month), Pro (3/day), Creator (10/day). Limits are enforced; billing is not wired yet (demo mode lets you switch plans).
+- **Two posting modes**: free one-click (X share link + reminder) or full autopilot (X API).
+- **Plans**: Free (1/day, 10/month), Pro (3/day), Creator (10/day). Limits are enforced; billing is not wired yet (one-click mode lets you switch plans).
 - **History**: everything posted or failed, with links to X.
 
 ## Going live

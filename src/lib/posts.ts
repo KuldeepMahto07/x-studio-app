@@ -129,10 +129,28 @@ export function setAutopilot(userId: string, on: boolean) {
   run("UPDATE users SET autopilot = ? WHERE id = ?", on ? 1 : 0, userId);
 }
 
+/** Posts that count toward plan limits: published, being published, or prepared for one-click posting. */
 export function postedCountSince(userId: string, sinceIso: string): number {
   return get<{ n: number }>(
-    "SELECT COUNT(*) n FROM posts WHERE user_id = ? AND status IN ('posted', 'posting') AND COALESCE(posted_at, created_at) >= ?",
+    "SELECT COUNT(*) n FROM posts WHERE user_id = ? AND status IN ('posted', 'posting', 'ready') AND COALESCE(posted_at, created_at) >= ?",
     userId,
     sinceIso,
   )?.n ?? 0;
+}
+
+export const listReady = (userId: string) =>
+  all<Post>("SELECT * FROM posts WHERE user_id = ? AND status = 'ready' ORDER BY created_at", userId);
+
+/** One-click mode: the user opened X's composer for this post, so record it as posted. */
+export function markPosted(userId: string, postId: string) {
+  run("UPDATE posts SET status = 'posted', posted_at = ? WHERE id = ? AND user_id = ? AND status = 'ready'", nowIso(), postId, userId);
+}
+
+/** One-click mode: the user skipped a prepared post; put it back at the front of the queue. */
+export function unreadyPost(userId: string, postId: string) {
+  const first = get<{ p: number | null }>("SELECT MIN(position) p FROM posts WHERE user_id = ? AND status = 'queued'", userId)?.p ?? 1;
+  run(
+    "UPDATE posts SET status = 'queued', slot_key = NULL, position = ? WHERE id = ? AND user_id = ? AND status = 'ready'",
+    first - 1, postId, userId,
+  );
 }
