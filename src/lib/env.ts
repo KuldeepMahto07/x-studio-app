@@ -5,7 +5,7 @@ export const env = {
   xClientId: process.env.X_CLIENT_ID ?? "",
   xClientSecret: process.env.X_CLIENT_SECRET ?? "",
   geminiKey: process.env.GEMINI_API_KEY ?? "",
-  geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+  geminiModel: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   cronSecret: process.env.CRON_SECRET ?? "",
   isProd: process.env.NODE_ENV === "production",

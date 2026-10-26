@@ -27,18 +27,46 @@ Reply with the post text only, no quotes, no preamble.`;
 
 const pick = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)];
 
-async function callGemini(prompt: string): Promise<string> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${env.geminiModel}:generateContent`,
-    {
+// Used when the configured model is busy, slow, or unavailable. Lite models stay responsive under load.
+const FALLBACK_MODEL = "gemini-3.5-flash-lite";
+const TIMEOUT_MS = 25_000;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+type GeminiResult = { ok: true; text: string } | { ok: false; busy: boolean; error: string };
+
+async function callModel(model: string, prompt: string): Promise<GeminiResult> {
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": env.geminiKey },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-    },
-  );
-  if (!res.ok) throw new Error(`Gemini error (${res.status}): ${(await res.text()).slice(0, 300)}`);
-  const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-  return json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      return { ok: false, busy: res.status === 429 || res.status === 503, error: `Gemini ${model} error (${res.status}): ${(await res.text()).slice(0, 200)}` };
+    }
+    const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    return { ok: true, text: json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "" };
+  } catch (err) {
+    const timedOut = err instanceof Error && err.name === "TimeoutError";
+    return { ok: false, busy: true, error: timedOut ? `Gemini ${model} timed out after ${TIMEOUT_MS / 1000}s` : `Gemini ${model}: ${String(err)}` };
+  }
+}
+
+/** Calls Gemini with a timeout, one retry when busy, then the fallback model. */
+async function callGemini(prompt: string): Promise<string> {
+  const models = [...new Set([env.geminiModel, FALLBACK_MODEL])];
+  let lastError = "";
+  for (const model of models) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await callModel(model, prompt);
+      if (result.ok) return result.text;
+      lastError = result.error;
+      if (!result.busy) break; // e.g. model not available to this key: go straight to the fallback
+      if (attempt === 0) await sleep(1500);
+    }
+  }
+  throw new Error(lastError);
 }
 
 function fakePost(n: Niche, topic: string, format: string): string {
