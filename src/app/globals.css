@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg: #0b0d10;
+  --color-panel: #13161b;
+  --color-panel-2: #1a1e25;
+  --color-line: #252a33;
+  --color-ink: #e7e9ee;
+  --color-muted: #8b93a3;
+  --color-accent: #4c9aff;
+  --color-accent-ink: #06121f;
+  --color-ok: #3ecf8e;
+  --color-warn: #f5a524;
+  --color-bad: #ff5c6c;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-panel-2 px-3.5 py-2 text-sm font-medium text-ink transition hover:border-[#3a4150] disabled:cursor-default disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-accent bg-accent font-semibold text-accent-ink hover:border-accent hover:brightness-110;
+  }
+  .btn-ghost {
+    @apply bg-transparent;
+  }
+  .btn-danger {
+    @apply hover:border-bad hover:text-bad;
+  }
+  .card {
+    @apply rounded-xl border border-line bg-panel p-4;
+  }
+  .field {
+    @apply w-full rounded-lg border border-line bg-panel-2 px-3 py-2.5 text-ink outline-none placeholder:text-muted focus:border-accent;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold;
+  }
+  .tag {
+    @apply rounded-md border border-line bg-panel-2 px-2 py-0.5 text-xs text-muted;
+  }
+}
