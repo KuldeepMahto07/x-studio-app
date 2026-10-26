@@ -2,13 +2,8 @@ import Link from "next/link";
 import { localLogin } from "./actions";
 import { oneClickMode } from "@/lib/env";
 import { PLANS } from "@/lib/types";
-import { AppIcon, IconBell, IconList, IconSparkles } from "@/components/icons";
-
-const features = [
-  { Icon: IconSparkles, color: "bg-warn", title: "Writes in your niche", body: "Set your topics and voice once. AI drafts posts that sound like you." },
-  { Icon: IconList, color: "bg-accent", title: "You stay in control", body: "Approve, edit, and reorder a queue. Or let it run." },
-  { Icon: IconBell, color: "bg-bad", title: "Ready on time", body: "At your chosen times, post with one tap, or go fully automatic." },
-];
+import { AppIcon } from "@/components/icons";
+import { LandingFeatures } from "@/components/landing-features";
 
 export default function Landing() {
   return (
@@ -77,15 +72,7 @@ export default function Landing() {
         </div>
       </header>
 
-      <section className="grid gap-3 py-10 sm:grid-cols-3">
-        {features.map(({ Icon, color, title, body }, i) => (
-          <div key={title} className="card animate-rise" style={{ animationDelay: `${200 + i * 70}ms` }}>
-            <span className={`mb-3 grid size-10 place-items-center rounded-[10px] text-white ${color}`}><Icon width={22} height={22} /></span>
-            <h3 className="text-[17px] font-semibold">{title}</h3>
-            <p className="mt-1 text-[15px] text-muted">{body}</p>
-          </div>
-        ))}
-      </section>
+      <LandingFeatures />
 
       <section className="py-10">
         <h2 className="mb-6 text-center text-[28px] font-bold tracking-tight">Simple pricing</h2>

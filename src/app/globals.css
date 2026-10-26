@@ -146,3 +146,48 @@ body {
   .large-title { @apply text-[34px] leading-[41px] font-bold tracking-[0.01em]; }
   .material { @apply bg-bar backdrop-blur-xl backdrop-saturate-150; }
 }
+
+/* ---------- Landing feature tiles ---------- */
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes notif-drop {
+  0% { opacity: 0; transform: translateY(-40px) scale(0.92); }
+  8%, 45% { opacity: 1; transform: none; }
+  55%, 100% { opacity: 0; transform: translateY(6px) scale(0.97); }
+}
+@keyframes queue-bump {
+  0%, 30% { transform: none; }
+  38% { transform: scale(1.03); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
+  46%, 100% { transform: none; box-shadow: none; }
+}
+@keyframes queue-swipe {
+  0%, 55% { transform: translateX(0); }
+  65%, 85% { transform: translateX(-80px); }
+  95%, 100% { transform: translateX(0); }
+}
+@keyframes tap-cursor {
+  0%, 20% { transform: translate(-60px, -40px); opacity: 0; }
+  35% { opacity: 1; }
+  55% { transform: translate(0, 0); }
+  60% { transform: translate(0, 0) scale(0.85); }
+  66%, 85% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(0, 0); opacity: 0; }
+}
+@keyframes post-pulse {
+  0%, 57% { box-shadow: 0 0 0 0 rgba(10, 132, 255, 0); }
+  60% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(10, 132, 255, 0.55); }
+  75% { transform: none; box-shadow: 0 0 0 12px rgba(10, 132, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(10, 132, 255, 0); }
+}
+.caret { animation: blink 1s steps(1) infinite; }
+.notif-drop { opacity: 0; animation: notif-drop 6s var(--ease-spring) infinite; }
+.queue-bump { animation: queue-bump 5s ease-in-out infinite; }
+.queue-swipe { animation: queue-swipe 5s var(--ease-spring) infinite; }
+.tap-cursor { animation: tap-cursor 4s ease-in-out infinite; }
+.post-pulse { animation: post-pulse 4s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .caret, .notif-drop, .queue-bump, .queue-swipe, .tap-cursor, .post-pulse, .animate-float, .animate-rise, .animate-pop { animation: none !important; }
+  .notif-drop { opacity: 1; }
+  .tap-cursor { display: none; }
+  .tile { transition: none; }
+}
